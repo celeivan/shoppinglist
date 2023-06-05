@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+#Install docker 
+/usr/local/bin/composer install
+
 # Run the additional command
 /usr/local/bin/php /var/www/html/setup.php &
 
