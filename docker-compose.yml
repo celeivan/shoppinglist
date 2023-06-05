@@ -1,0 +1,60 @@
+version: '3'
+
+networks:
+  ishop-net:
+
+services:
+  app:
+    image: nginx:stable-alpine
+    ports:
+      - "9123:80"
+    volumes:
+      - ./MyShoppingApp:/var/www/html:delegated
+      - ./dockerfiles/nginx/:/etc/nginx/conf.d/
+    depends_on:
+      - php
+    networks:
+      - ishop-net
+
+  mysql:
+    image: mysql:8.0.33
+    restart: unless-stopped
+    tty: true
+    env_file:
+      - ./MyShoppingApp/.env
+    environment:
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+    networks:
+      - ishop-net
+
+  php:
+    build:
+      context: ./dockerfiles
+      dockerfile: php.dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./MyShoppingApp:/var/www/html:delegated
+    networks:
+      - ishop-net
+
+  composer:
+    build:
+      context: ./dockerfiles
+      dockerfile: php.dockerfile
+    volumes:
+      - ./MyShoppingApp:/var/www/html
+    depends_on:
+      - php
+    entrypoint: [ 'composer', '--ignore-platform-reqs' ]
+    networks:
+      - ishop-net

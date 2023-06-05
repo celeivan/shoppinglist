@@ -1,0 +1,4 @@
+.docker
+*.env
+MyShoppingApp/vendor
+mysql-data/*
